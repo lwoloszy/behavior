@@ -74,7 +74,7 @@ def simulateData(k=15.0, A=0.67, t1_nond=0.325, t2_nond=0.375,
     return out
 
 
-def fitData(data):
+def fitData(data, theta_init=[20, .5, .5, .5]):
     """
     Fits choice and reaction time data to a flat bound diffusion to bound model
 
@@ -84,6 +84,8 @@ def fitData(data):
            and the columns correspond to stim_strengths, t1_meanrt, t1_sert,
            t2_meanrt, t2_sert, n1, and n_total
 
+    theta_init : array, inital theta vector for fmin: k, A, t1_nond, t2_nond
+
     Returns
     ----------
     theta : vector of parameters: k, A, t1_nondt, t2_nondt
@@ -91,11 +93,11 @@ def fitData(data):
     """
 
     theta = fmin(
-        calcNegLL, np.array([20, .5, .5, .5]), args=(data,))
+        calcNegLL, theta_init, args=(data,))
     return theta
 
 
-def plotDataWithFit(data):
+def plotDataWithFit(data, theta_init=[20, .5, .5, .5]):
     """
     Fits choice and reaction time data to a flat bound diffusion to bound model
     and plots results
@@ -106,13 +108,15 @@ def plotDataWithFit(data):
            and the columns correspond to stim_strengths, t1_meanrt, t1_sert,
            t2_meanrt, t2_sert, n1, and n_total
 
+    theta_init : array, inital theta vector for fmin: k, A, t1_nond, t2_nond
+
     Returns
     ----------
     theta : vector of parameters: k, A, t1_nondt, t2_nondt
 
     """
 
-    theta = fitData(data)
+    theta = fitData(data, theta_init)
 
     min_x = np.min(data[:, 0])
     max_x = np.max(data[:, 0])
@@ -149,15 +153,12 @@ def plotDataWithFit(data):
 
     # Now plot the reaction times and their DTB fits
     ax_rt = fig.add_subplot(122)
-
     ax_rt.add_line(plt.Line2D(xdata, t1_meanrt_p, color=colors[0]))
     ax_rt.add_line(plt.Line2D(xdata, t2_meanrt_p, color=colors[1]))
-
     ax_rt.errorbar(data[:, 0], data[:, 1], yerr=data[:, 2], color=colors[0],
                    linestyle='None', marker='o', capsize=0)
     ax_rt.errorbar(data[:, 0], data[:, 3], yerr=data[:, 4], color=colors[1],
                    linestyle='None', marker='o', capsize=0)
-
     ax_rt.set_xlim(np.min(xdata) * 1.2, np.max(xdata) * 1.2)
     ax_rt.set_ylim(np.nanmin(np.concatenate([data[:, 1], data[:, 3]])) * 0.7,
                    np.nanmax(np.concatenate([data[:, 1], data[:, 3]])) * 1.1)
