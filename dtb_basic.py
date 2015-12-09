@@ -245,7 +245,7 @@ def calcNegLL(theta, data):
 
     Returns
     -------
-    neg_ll : float, negative log lielihood of the data
+    neg_ll : float, negative log likelihood of the data
 
     """
 
