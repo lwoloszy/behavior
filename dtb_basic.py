@@ -28,15 +28,19 @@ def simulateData(k=15.0, A=0.67, t1_nond=0.325, t2_nond=0.375,
 
     A : float, bound
 
-    t1_nondt: float, non decision time for making t1 choice
+    t1_nondt : float, non decision time for making t1 choice
 
-    t2_nondt: float, non decision time for making t2 choice
+    t2_nondt : float, non decision time for making t2 choice
+
+    n_trials : int, number of trials per stim_strength to simulate
+
+    dt : temporal resolution of the simulated diffusion process
 
     Returns
     -------
     out : 2D array of shape (N, 7) where N is number of stimulus strengths
-           and the columns correspond to stim_strengths, t1_meanrt, t1_sert,
-           t2_meanrt, t2_sert, n1, and n_total
+          and the columns correspond to stim_strengths, t1_meanrt, t1_sert,
+          t2_meanrt, t2_sert, n1, and n_total
 
     """
 
@@ -197,6 +201,7 @@ def calculateCPandRT(stim_strengths, k, A, t1_nondt, t2_nondt):
     Returns
     -------
     out : dictionary with keys stim_strength, p_t1, t1_meanrt, t2_meanrt
+
     """
 
     # compute probability of t1 response given k and A
@@ -241,6 +246,7 @@ def calcNegLL(theta, data):
     Returns
     -------
     neg_ll : float, negative log lielihood of the data
+
     """
 
     k, A, t1_nondt, t2_nondt = theta
