@@ -289,7 +289,6 @@ def plotBeliefMap(theta, dt=.0005):
 
     """
 
-    fig = plt.figure()
     k, B0, Bdel, B2, tnd, tnd_sd, stim_strength_bias, y0 = theta
 
     ustim_strengths = np.array([
@@ -333,6 +332,7 @@ def plotBeliefMap(theta, dt=.0005):
 
     n = 20
     b_correct = np.zeros_like(p_correct_notabs)
+    b_correct[:] = np.nan
     b_correct[(idx_lo - n):idx_lo, :] = np.tile(
         p_correct_lo[np.newaxis, :], [n, 1])
     b_correct[idx_up:idx_up + n, :] = np.tile(
@@ -346,15 +346,16 @@ def plotBeliefMap(theta, dt=.0005):
     y = y[::-1]
 
     fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
+    ax = fig.add_subplot(1, 2, 1)
     tmax = t[np.where(np.sum(p_correct_notabs, axis=0) == 0)[0][0]]
-    ax.imshow(np.log(p_correct_notabs / (1 - p_correct_notabs)),
-              vmin=0, cmap='PuRd', extent=[t[0], t[-1], y[-1], y[0]])
-    im = ax.imshow(np.log(b_correct / (1 - b_correct)),
-                   vmin=0, cmap='PuRd', extent=[t[0], t[-1], y[-1], y[0]])
-    cbar = plt.colorbar(im, shrink=0.5, aspect=10)
-    cbar.ax.set_xlabel('Log odds of correct')
-    cbar.set_ticks(np.arange(0, 4, 0.5))
+    im = ax.imshow(p_correct_notabs, vmin=0.5, vmax=1,
+                   cmap='Purples', extent=[t[0], t[-1], y[-1], y[0]])
+    ax.imshow(b_correct, vmin=0.5, vmax=1,
+              cmap='Purples', extent=[t[0], t[-1], y[-1], y[0]])
+
+    cbar = plt.colorbar(im, shrink=0.25, aspect=10)
+    cbar.ax.set_xlabel('Probability correct')
+    cbar.set_ticks(np.arange(0.5, 1.1, 0.1))
     cbar.solids.set_edgecolor("face")
     ax.set_xlim(0, tmax)
     ax.set_ylim(ymin, ymax)
@@ -362,6 +363,24 @@ def plotBeliefMap(theta, dt=.0005):
     ax.set_ylabel('Decision variable (a.u.)')
 
     sns.despine(ax=ax, offset=5, trim=True)
+
+    ax = fig.add_subplot(1, 2, 2)
+    tmax = t[np.where(np.sum(p_correct_notabs, axis=0) == 0)[0][0]]
+    im = ax.imshow(np.log(p_correct_notabs / (1 - p_correct_notabs)),
+                   vmin=0, cmap='RdPu', extent=[t[0], t[-1], y[-1], y[0]])
+    ax.imshow(np.log(b_correct / (1 - b_correct)),
+              vmin=0, cmap='RdPu', extent=[t[0], t[-1], y[-1], y[0]])
+    cbar = plt.colorbar(im, shrink=0.25, aspect=10)
+    cbar.ax.set_xlabel('Log odds correct')
+    cbar.set_ticks(np.arange(0, 4.5, 0.5))
+    cbar.solids.set_edgecolor("face")
+    ax.set_xlim(0, tmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Decision variable (a.u.)')
+
+    sns.despine(ax=ax, offset=5, trim=True)
+
     plt.tight_layout()
 
 
