@@ -269,6 +269,102 @@ def plotDataWithFit(data, theta, dt=.0005):
     plt.tight_layout()
 
 
+def plotBeliefMap(theta, dt=.0005):
+    """
+    Given a diffusion to bound model with quadratically collapsing bounds
+    parametrized by theta, plot the belief the subject has that, given a
+    value of the decision variable and the time taken to reach that value,
+    the answer he or she provides will be correct
+
+    Parameters
+    ----------
+    theta : 8 element list or array containing the fitted DTB parameters
+            k, B0, Bdel, B2, tnd, tnd_sd, stim_strength_bias, y0
+
+    dt : float, temporal resolution, in seconds, to use when propagating
+         the stimulus strengths
+
+    Returns
+    -------
+
+    """
+
+    fig = plt.figure()
+    k, B0, Bdel, B2, tnd, tnd_sd, stim_strength_bias, y0 = theta
+
+    ustim_strengths = np.array([
+        -0.512, -0.256, -0.128, -0.064, -0.032, 0,
+        0.032, 0.064, 0.128, 0.256, 0.512])
+
+    # 0 strength is present twice as often
+    priors = np.array([1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1])
+
+    drifts, t, Bup, Blo, y, yinit = discretize(
+        theta, ustim_strengths, 5, dt)
+
+    D = propagate(drifts, t, Bup, Blo, y, yinit, notabs_flag=True)
+    midx = int(D['notabs']['pdf'].shape[0] / 2)
+
+    # do the computation for the not absorbed portion first
+    densities = D['notabs']['pdf'] * priors[:, np.newaxis, np.newaxis]
+    pstim_xt = densities / (
+        np.sum(densities + eps, axis=0)[np.newaxis, :, :])
+    neg_sel = ustim_strengths < 0
+    pos_sel = ustim_strengths > 0
+    p_correct_neg = np.sum(pstim_xt[neg_sel, :, :], axis=0)[:, :, np.newaxis]
+    p_correct_pos = np.sum(pstim_xt[pos_sel, :, :], axis=0)[:, :, np.newaxis]
+    p_correct_notabs = np.max(
+        np.concatenate([p_correct_neg, p_correct_pos], axis=2), axis=2)
+    p_correct_notabs += 0.5 * pstim_xt[midx, :, :]
+
+    # now the portion that hit the bounds
+    densities = D['lo']['pdf_t'] * priors
+    pstim_t = densities / np.sum(densities + eps, axis=1)[:, np.newaxis]
+    p_correct_lo = (
+        np.sum(pstim_t[:, neg_sel], axis=1) + 0.5 * pstim_t[:, midx])
+
+    densities = D['up']['pdf_t'] * priors
+    pstim_t = densities / np.sum(densities + eps, axis=1)[:, np.newaxis]
+    p_correct_up = (
+        np.sum(pstim_t[:, pos_sel], axis=1) + 0.5 * pstim_t[:, midx])
+
+    idx_lo = np.where(y <= Blo[0])[0][-5]
+    idx_up = np.where(y >= Bup[0])[0][5]
+
+    n = 20
+    b_correct = np.zeros_like(p_correct_notabs)
+    b_correct[(idx_lo - n):idx_lo, :] = np.tile(
+        p_correct_lo[np.newaxis, :], [n, 1])
+    b_correct[idx_up:idx_up + n, :] = np.tile(
+        p_correct_up[np.newaxis, :], [n, 1])
+    ymin, ymax = y[idx_lo - n], y[idx_up + n]
+
+    t = t.flatten()
+    y = y.flatten()
+    p_correct_notabs = np.flipud(p_correct_notabs)
+    b_correct = np.flipud(b_correct)
+    y = y[::-1]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    tmax = t[np.where(np.sum(p_correct_notabs, axis=0) == 0)[0][0]]
+    ax.imshow(np.log(p_correct_notabs / (1 - p_correct_notabs)),
+              vmin=0, cmap='PuRd', extent=[t[0], t[-1], y[-1], y[0]])
+    im = ax.imshow(np.log(b_correct / (1 - b_correct)),
+                   vmin=0, cmap='PuRd', extent=[t[0], t[-1], y[-1], y[0]])
+    cbar = plt.colorbar(im, shrink=0.5, aspect=10)
+    cbar.ax.set_xlabel('Log odds of correct')
+    cbar.set_ticks(np.arange(0, 4, 0.5))
+    cbar.solids.set_edgecolor("face")
+    ax.set_xlim(0, tmax)
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Decision variable (a.u.)')
+
+    sns.despine(ax=ax, offset=5, trim=True)
+    plt.tight_layout()
+
+
 def calculateNegLL(theta, stim_strengths, rt, ci, dt=0.0005):
     """
     Given a  diffusion to bound model with quadratically collapsing bounds
@@ -424,6 +520,7 @@ def propagate(drifts, t, Bup, Blo, y, y0, notabs_flag=False):
 
         # turn back into time domain
         U = np.real(np.fft.ifft(Ufft, axis=0))
+        U = np.clip(U, 0, np.inf)
 
         D['up']['pdf_t'][i, :] = np.sum(U * (y >= Bup[i]), axis=0)
         D['lo']['pdf_t'][i, :] = np.sum(U * (y <= Blo[i]), axis=0)
