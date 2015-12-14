@@ -63,7 +63,7 @@ def plotDataBernoulli(y, stim_strength, theta_init=[.1, 1]):
     ax.set_xlabel('Stim strength')
     ax.set_ylabel('Proportion correct')
 
-    # trim won't won't with x log axis so just leave it
+    # trim won't work with x log axis so just leave it
     sns.despine(offset=5)
 
     ax.set_xscale('log')
@@ -120,7 +120,7 @@ def plotDataBinomial(data):
     ax.set_ylabel('Proportion correct')
     sns.despine(offset=5, bottom=False)
 
-    # trim won't won't with x log axis so just leave it
+    # trim won't work with x log axis so just leave it
     sns.despine(offset=5)
 
     plt.tight_layout()
