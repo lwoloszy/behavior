@@ -1,4 +1,5 @@
-# diffusion_to_bound
-Tools to fit choice and reaction time data to a variety of diffusion-to-bound models
+# behavior
+Tools to fit choice and reaction time data mainly to diffusion-to-bound models but also
+to other functions which can capture psychophysical data
 
-![alt tag](https://raw.github.com/lwoloszy/diffusion_to_bound/master/img/beliefmap.png)
+![alt tag](https://raw.github.com/lwoloszy/behavior/master/img/beliefmap.png)
